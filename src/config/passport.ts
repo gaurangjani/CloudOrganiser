@@ -69,7 +69,7 @@ if (config.oauth.microsoft.clientId && config.oauth.microsoft.clientSecret) {
         clientID: config.oauth.microsoft.clientId,
         clientSecret: config.oauth.microsoft.clientSecret,
         callbackURL: config.oauth.microsoft.callbackUrl,
-        scope: ['user.read'],
+        scope: ['user.read', 'Files.Read', 'Files.ReadWrite', 'Files.Read.All'],
       },
       async (
         _accessToken: string,
