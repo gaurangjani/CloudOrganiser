@@ -31,9 +31,11 @@ export type EventHandler<T = WebhookEvent> = (event: T) => void | Promise<void>;
 /**
  * EventSubscription represents a subscription to an event
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface EventSubscription {
   id: string;
   eventType: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   handler: EventHandler<any>;
   unsubscribe: () => void;
 }

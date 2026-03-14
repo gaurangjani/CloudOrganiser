@@ -92,6 +92,7 @@ export class EventBus {
    * @param eventType - The event type
    * @param handler - The handler to remove
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private unsubscribe(subscriptionId: string, eventType: string, handler: EventHandler<any>): void {
     logger.debug(`Unsubscribing: ${subscriptionId} from event: ${eventType}`);
 
