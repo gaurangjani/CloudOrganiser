@@ -1,10 +1,20 @@
 // AI provider types for pluggable AI model support
 
 /**
+ * Supported AI provider types — used for Joi validation and TypeScript typing
+ */
+export const AI_PROVIDER_TYPES = ['openai', 'azure-openai', 'local'] as const;
+
+/**
+ * Union type derived from the supported AI provider types
+ */
+export type AIProviderType = (typeof AI_PROVIDER_TYPES)[number];
+
+/**
  * AIProviderConfig represents configuration for an AI provider
  */
 export interface AIProviderConfig {
-  provider: 'openai' | 'azure-openai' | 'local';
+  provider: AIProviderType;
   apiKey?: string;
   endpoint?: string;
   model?: string;

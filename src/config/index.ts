@@ -2,6 +2,7 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import Joi from 'joi';
+import { AI_PROVIDER_TYPES, AIProviderType } from '../types/ai.types';
 
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '../../.env') });
@@ -38,6 +39,16 @@ const envVarsSchema = Joi.object({
   MICROSOFT_CLIENT_ID: Joi.string().allow('').optional(),
   MICROSOFT_CLIENT_SECRET: Joi.string().allow('').optional(),
   MICROSOFT_CALLBACK_URL: Joi.string().allow('').optional(),
+
+  // AI Provider
+  AI_PROVIDER: Joi.string().valid(...AI_PROVIDER_TYPES).default('local'),
+  AI_API_KEY: Joi.string().allow('').optional(),
+  AI_ENDPOINT: Joi.string().allow('').optional(),
+  AI_MODEL: Joi.string().allow('').optional(),
+  AI_MAX_TOKENS: Joi.number().optional(),
+  AI_TEMPERATURE: Joi.number().min(0).max(2).optional(),
+  AI_TIMEOUT: Joi.number().optional(),
+  AI_RETRY_ATTEMPTS: Joi.number().optional(),
 })
   .unknown()
   .required();
@@ -82,5 +93,16 @@ export const config = {
       clientSecret: envVars.MICROSOFT_CLIENT_SECRET as string,
       callbackUrl: envVars.MICROSOFT_CALLBACK_URL as string,
     },
+  },
+
+  ai: {
+    provider: envVars.AI_PROVIDER as AIProviderType,
+    apiKey: envVars.AI_API_KEY as string | undefined,
+    endpoint: envVars.AI_ENDPOINT as string | undefined,
+    model: envVars.AI_MODEL as string | undefined,
+    maxTokens: envVars.AI_MAX_TOKENS as number | undefined,
+    temperature: envVars.AI_TEMPERATURE as number | undefined,
+    timeout: envVars.AI_TIMEOUT as number | undefined,
+    retryAttempts: envVars.AI_RETRY_ATTEMPTS as number | undefined,
   },
 };
