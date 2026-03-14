@@ -61,7 +61,7 @@ export class OneDriveConnector implements CloudStorageConnector {
         client_secret: this.config.clientSecret,
         refresh_token: this.token.refreshToken,
         grant_type: 'refresh_token',
-        scope: this.config.scopes.join(' '),
+        scope: this.config.scopes?.join(' ') || '',
       });
 
       const response = await fetch(tokenEndpoint, {
@@ -267,7 +267,7 @@ export class OneDriveConnector implements CloudStorageConnector {
     try {
       const content = Buffer.isBuffer(options.content)
         ? options.content
-        : Buffer.from(options.content);
+        : Buffer.from(options.content || '');
 
       const path = options.path || '/';
       const cleanPath = path.startsWith('/') ? path.substring(1) : path;

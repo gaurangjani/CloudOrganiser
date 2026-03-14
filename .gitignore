@@ -10,6 +10,7 @@ build/
 *.js.map
 dist/**/*.d.ts
 !jest.config.js
+!jest.setup.js
 
 # Environment variables
 .env
