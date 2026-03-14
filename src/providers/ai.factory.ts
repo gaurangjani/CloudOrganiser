@@ -3,6 +3,7 @@ import { AIProvider, AIProviderConfig, AIProviderError } from '../types/ai.types
 import { OpenAIProvider } from './openai.provider';
 import { AzureOpenAIProvider } from './azure-openai.provider';
 import { LocalModelProvider } from './local.provider';
+import { config } from '../config';
 
 /**
  * AIProviderFactory creates and initializes AI providers
@@ -13,10 +14,10 @@ export class AIProviderFactory {
    * @param config - The provider configuration
    * @returns Promise resolving to an initialized AI provider
    */
-  static async createProvider(config: AIProviderConfig): Promise<AIProvider> {
+  static async createProvider(providerConfig: AIProviderConfig): Promise<AIProvider> {
     let provider: AIProvider;
 
-    switch (config.provider) {
+    switch (providerConfig.provider) {
       case 'openai':
         provider = new OpenAIProvider();
         break;
@@ -30,36 +31,34 @@ export class AIProviderFactory {
         break;
 
       default:
-        throw new AIProviderError(`Unsupported provider type: ${config.provider}`, 'factory');
+        throw new AIProviderError(`Unsupported provider type: ${providerConfig.provider}`, 'factory');
     }
 
-    await provider.initialize(config);
+    await provider.initialize(providerConfig);
 
     if (!provider.isReady()) {
-      throw new AIProviderError(`Provider ${config.provider} failed to initialize`, 'factory');
+      throw new AIProviderError(`Provider ${providerConfig.provider} failed to initialize`, 'factory');
     }
 
     return provider;
   }
 
   /**
-   * Create a provider from environment variables
+   * Create a provider from application configuration (validated environment variables)
    * @returns Promise resolving to an initialized AI provider
    */
   static async createFromEnv(): Promise<AIProvider> {
-    const providerType = (process.env.AI_PROVIDER || 'local') as AIProviderConfig['provider'];
-
-    const config: AIProviderConfig = {
-      provider: providerType,
-      apiKey: process.env.AI_API_KEY,
-      endpoint: process.env.AI_ENDPOINT,
-      model: process.env.AI_MODEL,
-      maxTokens: process.env.AI_MAX_TOKENS ? parseInt(process.env.AI_MAX_TOKENS) : undefined,
-      temperature: process.env.AI_TEMPERATURE ? parseFloat(process.env.AI_TEMPERATURE) : undefined,
-      timeout: process.env.AI_TIMEOUT ? parseInt(process.env.AI_TIMEOUT) : undefined,
-      retryAttempts: process.env.AI_RETRY_ATTEMPTS ? parseInt(process.env.AI_RETRY_ATTEMPTS) : undefined,
+    const aiConfig: AIProviderConfig = {
+      provider: config.ai.provider,
+      apiKey: config.ai.apiKey,
+      endpoint: config.ai.endpoint,
+      model: config.ai.model,
+      maxTokens: config.ai.maxTokens,
+      temperature: config.ai.temperature,
+      timeout: config.ai.timeout,
+      retryAttempts: config.ai.retryAttempts,
     };
 
-    return this.createProvider(config);
+    return this.createProvider(aiConfig);
   }
 }
