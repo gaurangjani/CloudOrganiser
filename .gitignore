@@ -8,7 +8,7 @@ dist/
 build/
 *.js
 *.js.map
-*.d.ts
+dist/**/*.d.ts
 !jest.config.js
 
 # Environment variables
