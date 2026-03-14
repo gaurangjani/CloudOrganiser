@@ -4,3 +4,5 @@ build
 coverage
 *.js
 !jest.config.js
+**/*.test.ts
+**/*.spec.ts
