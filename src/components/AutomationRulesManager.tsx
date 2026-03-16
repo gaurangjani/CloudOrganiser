@@ -91,11 +91,8 @@ const DEFAULT_FIELD_BY_TYPE: Record<RuleType, string> = {
 
 // ---- Helper functions ----
 
-let idCounter = 0;
-
 function generateId(): string {
-  idCounter += 1;
-  return `rule-${Date.now()}-${idCounter}`;
+  return crypto.randomUUID();
 }
 
 function makeEmptyForm(priority: number): RuleFormData {
@@ -119,6 +116,9 @@ function ruleToForm(rule: Rule): RuleFormData {
     priority: rule.priority,
     enabled: rule.enabled,
     conditionLogic: rule.conditionLogic,
+    // Condition values are normalised to strings for the text inputs.
+    // Non-string values (numbers, arrays, etc.) are serialised via JSON.stringify
+    // so the user can see and edit them; they are stored back as strings on save.
     conditions: rule.conditions.map(c => ({
       field: c.field,
       operator: c.operator,
