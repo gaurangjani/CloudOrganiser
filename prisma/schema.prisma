@@ -1,0 +1,316 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum OAuthProvider {
+  GOOGLE
+  MICROSOFT
+}
+
+enum StorageProvider {
+  GOOGLE
+  MICROSOFT
+  LOCAL
+  AWS
+  AZURE
+}
+
+enum RuleType {
+  FILE_TYPE
+  CONTENT
+  NAMING
+  FOLDER_ROUTING
+  AI_ASSISTED
+}
+
+enum RuleSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum RuleAction {
+  ALLOW
+  BLOCK
+  WARN
+  MOVE
+  RENAME
+  TAG
+  CLASSIFY
+}
+
+enum FileEventType {
+  FILE_CREATED
+  FILE_UPDATED
+  FILE_DELETED
+  FILE_RENAMED
+}
+
+enum OrganizationRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+// ---------------------------------------------------------------------------
+// User
+// ---------------------------------------------------------------------------
+
+/// A user authenticated via OAuth (Google or Microsoft).
+model User {
+  id         String        @id @default(cuid())
+  email      String        @unique
+  name       String
+  provider   OAuthProvider
+  providerId String
+  avatar     String?
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+
+  // Soft delete
+  deletedAt DateTime?
+  deletedBy String?
+
+  // Relations
+  organizations UserOrganization[]
+  rules         Rule[]
+  fileRecords   FileRecord[]
+  fileEvents    FileEvent[]
+
+  @@unique([provider, providerId])
+  @@index([email])
+  @@index([deletedAt])
+}
+
+// ---------------------------------------------------------------------------
+// Organization
+// ---------------------------------------------------------------------------
+
+/// A tenant/team that groups users and their rules/files.
+model Organization {
+  id   String @id @default(cuid())
+  name String
+  slug String @unique
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+
+  // Soft delete
+  deletedAt DateTime?
+  deletedBy String?
+
+  // Relations
+  members     UserOrganization[]
+  rules       Rule[]
+  fileRecords FileRecord[]
+  fileEvents  FileEvent[]
+
+  @@index([slug])
+  @@index([deletedAt])
+}
+
+// ---------------------------------------------------------------------------
+// UserOrganization (join table)
+// ---------------------------------------------------------------------------
+
+/// Many-to-many relation between User and Organization with a role attribute.
+model UserOrganization {
+  userId         String
+  organizationId String
+  role           OrganizationRole @default(MEMBER)
+  joinedAt       DateTime         @default(now())
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+
+  // Soft delete
+  deletedAt DateTime?
+  deletedBy String?
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@id([userId, organizationId])
+  @@index([userId])
+  @@index([organizationId])
+  @@index([role])
+  @@index([deletedAt])
+}
+
+// ---------------------------------------------------------------------------
+// Rule
+// ---------------------------------------------------------------------------
+
+/// An organisational rule that drives the rules engine.
+model Rule {
+  id          String       @id @default(cuid())
+  name        String
+  description String
+  type        RuleType
+  priority    Int          @default(0)
+  enabled     Boolean      @default(true)
+  severity    RuleSeverity @default(MEDIUM)
+  action      RuleAction
+  /// JSON object holding rule-type-specific configuration.
+  config      Json
+  /// Optional free-form metadata attached to the rule.
+  metadata    Json?
+
+  // Foreign keys (optional – a rule can belong to a user, an org, or both)
+  userId         String?
+  organizationId String?
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+
+  // Soft delete
+  deletedAt DateTime?
+  deletedBy String?
+
+  // Relations
+  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([type, enabled])
+  @@index([priority(sort: Desc)])
+  @@index([organizationId, userId])
+  @@index([enabled, priority(sort: Desc)])
+  @@index([userId])
+  @@index([organizationId])
+  @@index([deletedAt])
+}
+
+// ---------------------------------------------------------------------------
+// FileRecord
+// ---------------------------------------------------------------------------
+
+/// A record of a cloud-storage file discovered and tracked by the system.
+model FileRecord {
+  id String @id @default(cuid())
+
+  // Core file information
+  name      String
+  extension String
+  mimeType  String
+  size      BigInt
+  encoding  String?
+  checksum  String?
+
+  // Location information
+  provider   StorageProvider
+  path       String
+  parentPath String
+  fullPath   String
+  driveId    String?
+  folderId   String?
+
+  // Classification data
+  tags       String[]
+  categories String[]
+
+  /// Optional free-form properties attached to the file.
+  customProperties Json?
+
+  // Cloud-native timestamps
+  fileCreatedAt  DateTime
+  fileModifiedAt DateTime
+  fileAccessedAt DateTime?
+
+  // Foreign keys
+  userId         String
+  organizationId String?
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+
+  // Soft delete
+  deletedAt DateTime?
+  deletedBy String?
+
+  // Relations
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  events       FileEvent[]
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([provider])
+  @@index([mimeType])
+  @@index([extension])
+  @@index([fullPath])
+  @@index([userId, provider])
+  @@index([organizationId, provider])
+  @@index([deletedAt])
+}
+
+// ---------------------------------------------------------------------------
+// FileEvent
+// ---------------------------------------------------------------------------
+
+/// A webhook-originated file-change event stored for auditing and replay.
+model FileEvent {
+  id String @id @default(cuid())
+
+  provider       StorageProvider
+  eventType      FileEventType
+  /// Raw webhook payload preserved for replay / debugging.
+  rawPayload     Json?
+  /// Timestamp reported by the cloud provider (may differ from createdAt).
+  eventTimestamp DateTime
+
+  // Foreign keys
+  fileRecordId   String?
+  userId         String
+  organizationId String?
+
+  // Audit fields
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+
+  // Soft delete
+  deletedAt DateTime?
+  deletedBy String?
+
+  // Relations
+  fileRecord   FileRecord?   @relation(fields: [fileRecordId], references: [id], onDelete: SetNull)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([organizationId])
+  @@index([provider, eventType])
+  @@index([fileRecordId])
+  @@index([eventTimestamp])
+  @@index([deletedAt])
+}
