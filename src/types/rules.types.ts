@@ -93,6 +93,8 @@ export interface RuleEvaluationResult {
   ruleType: RuleType;
   matched: boolean;
   actions: RuleAction[];
+  /** Confidence score produced by the rule handler (e.g. AI-assisted rules) */
+  confidence?: number;
   metadata?: Record<string, unknown>;
 }
 
@@ -104,7 +106,10 @@ export interface RulesEngineResult {
   fileContextId: string;
   matchedRules: RuleEvaluationResult[];
   totalRulesEvaluated: number;
+  /** Actions that were applied immediately (met the confidence threshold) */
   appliedActions: RuleAction[];
+  /** Actions that were queued for human approval (low confidence) */
+  pendingActionIds: string[];
   timestamp: Date;
 }
 
