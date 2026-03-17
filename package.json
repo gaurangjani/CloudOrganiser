@@ -18,8 +18,8 @@
     "saas",
     "file-management"
   ],
-  "author": "",
-  "license": "ISC",
+  "author": "gaurangjani",
+  "license": "Apache-2.0",
   "dependencies": {
     "@azure/ai-form-recognizer": "^5.1.0",
     "@microsoft/microsoft-graph-client": "^3.0.7",
