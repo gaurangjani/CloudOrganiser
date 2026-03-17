@@ -6,3 +6,4 @@ coverage
 !jest.config.js
 **/*.test.ts
 **/*.spec.ts
+**/*.test.tsx

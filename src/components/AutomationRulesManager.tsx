@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { randomUUID } from 'crypto';
 import {
   Rule,
   RuleType,
@@ -92,7 +93,7 @@ const DEFAULT_FIELD_BY_TYPE: Record<RuleType, string> = {
 // ---- Helper functions ----
 
 function generateId(): string {
-  return crypto.randomUUID();
+  return randomUUID();
 }
 
 function makeEmptyForm(priority: number): RuleFormData {
