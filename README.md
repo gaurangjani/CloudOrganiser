@@ -90,16 +90,16 @@ CloudOrganiser is a Node.js + TypeScript backend that intelligently organises fi
 │                        Cloud Providers                          │
 │          Google Drive                  Microsoft OneDrive       │
 └──────────────┬──────────────────────────────┬───────────────────┘
-               │  webhook notification         │  webhook notification
-               ▼                               ▼
+               │  webhook notification        │  webhook notification
+               ▼                              ▼
 ┌──────────────────────────────────────────────────────────────────┐
 │                    Express.js API Server                         │
 │  ┌─────────────┐  ┌──────────────┐  ┌──────────────────────┐     │
 │  │ Auth Routes │  │Health Routes │  │   Webhook Routes     │     │
 │  └─────────────┘  └──────────────┘  └──────────┬───────────┘     │
-└──────────────────────────────────────────────────┼───────────────┘
-                                                   │
-                                                   ▼
+└────────────────────────────────────────────────┼─────────────────┘
+                                                 │
+                                                 ▼
                                         ┌──────────────────┐
                                         │  WatcherAgent    │
                                         │ (change monitor) │
