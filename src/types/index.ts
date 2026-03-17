@@ -6,4 +6,5 @@ export * from './connector.types';
 export * from './ai.types';
 export * from './events.types';
 export * from './rules.types';
+export * from './ocr.types';
 export * from './approval.types';

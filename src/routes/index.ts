@@ -3,6 +3,7 @@ import { Router } from 'express';
 import healthRoutes from './health.routes';
 import authRoutes from './auth.routes';
 import webhookRoutes from './webhook.routes';
+import ocrRoutes from './ocr.routes';
 import approvalRoutes from './approval.routes';
 import { config } from '../config';
 
@@ -15,6 +16,7 @@ const apiPrefix = `/api/${config.apiVersion}`;
 router.use(`${apiPrefix}`, healthRoutes);
 router.use(`${apiPrefix}/auth`, authRoutes);
 router.use(`${apiPrefix}/webhooks`, webhookRoutes);
+router.use(`${apiPrefix}/ocr`, ocrRoutes);
 router.use(`${apiPrefix}/approvals`, approvalRoutes);
 
 // Example of how to add more routes:
