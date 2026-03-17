@@ -2,9 +2,10 @@
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as MicrosoftStrategy } from 'passport-microsoft';
-import { config } from '../config';
+import { config, MICROSOFT_OAUTH_SCOPES } from '../config';
 import { logger } from '../config/logger';
 import { User, OAuthProfile } from '../types/user.types';
+import { tokenService } from '../services/TokenService';
 
 // Serialize user to session
 passport.serializeUser((user: Express.User, done) => {
@@ -26,17 +27,12 @@ if (config.oauth.google.clientId && config.oauth.google.clientSecret) {
         callbackURL: config.oauth.google.callbackUrl,
       },
       async (
-        _accessToken: string,
-        _refreshToken: string,
+        accessToken: string,
+        refreshToken: string,
         profile: OAuthProfile,
         done: (error: Error | null, user?: User | false) => void
       ) => {
         try {
-          // In a real application, you would:
-          // 1. Check if user exists in database
-          // 2. Create new user if doesn't exist
-          // 3. Update user info if exists
-
           const user: User = {
             id: profile.id,
             email: profile.emails?.[0]?.value || '',
@@ -46,6 +42,22 @@ if (config.oauth.google.clientId && config.oauth.google.clientSecret) {
             avatar: profile.photos?.[0]?.value,
             createdAt: new Date(),
           };
+
+          // Persist tokens securely.
+          // Storage failure is intentionally non-fatal: the user can still
+          // authenticate for this session. However, the warning below should be
+          // monitored because a persistent failure will prevent token refresh
+          // and disconnect from working until the next login.
+          try {
+            await tokenService.storeTokens(
+              profile.id,
+              'google',
+              accessToken,
+              refreshToken || undefined
+            );
+          } catch (storageErr) {
+            logger.warn('Failed to persist Google OAuth tokens:', storageErr);
+          }
 
           logger.info(`Google OAuth successful for user: ${user.email}`);
           return done(null, user);
@@ -69,20 +81,15 @@ if (config.oauth.microsoft.clientId && config.oauth.microsoft.clientSecret) {
         clientID: config.oauth.microsoft.clientId,
         clientSecret: config.oauth.microsoft.clientSecret,
         callbackURL: config.oauth.microsoft.callbackUrl,
-        scope: ['user.read', 'Files.Read', 'Files.ReadWrite', 'Files.Read.All'],
+        scope: [...MICROSOFT_OAUTH_SCOPES],
       },
       async (
-        _accessToken: string,
-        _refreshToken: string,
+        accessToken: string,
+        refreshToken: string,
         profile: OAuthProfile,
         done: (error: Error | null, user?: User | false) => void
       ) => {
         try {
-          // In a real application, you would:
-          // 1. Check if user exists in database
-          // 2. Create new user if doesn't exist
-          // 3. Update user info if exists
-
           const user: User = {
             id: profile.id,
             email: profile.emails?.[0]?.value || '',
@@ -92,6 +99,22 @@ if (config.oauth.microsoft.clientId && config.oauth.microsoft.clientSecret) {
             avatar: profile.photos?.[0]?.value,
             createdAt: new Date(),
           };
+
+          // Persist tokens securely.
+          // Storage failure is intentionally non-fatal: the user can still
+          // authenticate for this session. However, the warning below should be
+          // monitored because a persistent failure will prevent token refresh
+          // and disconnect from working until the next login.
+          try {
+            await tokenService.storeTokens(
+              profile.id,
+              'microsoft',
+              accessToken,
+              refreshToken || undefined
+            );
+          } catch (storageErr) {
+            logger.warn('Failed to persist Microsoft OAuth tokens:', storageErr);
+          }
 
           logger.info(`Microsoft OAuth successful for user: ${user.email}`);
           return done(null, user);

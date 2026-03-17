@@ -17,3 +17,22 @@ export interface OAuthProfile {
   photos?: Array<{ value: string }>;
   provider: string;
 }
+
+// Stored OAuth token (database representation)
+export interface StoredOAuthToken {
+  userId: string;
+  provider: 'google' | 'microsoft';
+  accessToken: string;
+  refreshToken?: string;
+  expiresAt?: Date;
+  scope?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Token refresh response
+export interface TokenRefreshResult {
+  accessToken: string;
+  expiresAt?: Date;
+  scope?: string;
+}
