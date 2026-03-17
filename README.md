@@ -248,8 +248,8 @@ CloudOrganiser-/
 Clone the repository and install dependencies:
 
 ```bash
-git clone https://github.com/gaurangjani/CloudOrganiser-.git
-cd CloudOrganiser-
+git clone https://github.com/gaurangjani/CloudOrganiser.git
+cd CloudOrganiser
 npm install
 ```
 
