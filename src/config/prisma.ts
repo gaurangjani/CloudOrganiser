@@ -4,6 +4,7 @@
 // exhausting the database connection limit during hot-reloads.
 
 import { PrismaClient } from '../generated/prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 
 declare global {
   // Allow `globalThis.__prisma` without TypeScript errors
@@ -11,14 +12,17 @@ declare global {
   var __prisma: PrismaClient | undefined;
 }
 
+function createPrismaClient(): PrismaClient {
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error('DATABASE_URL environment variable is not set');
+  }
+  const adapter = new PrismaPg({ connectionString });
+  return new PrismaClient({ adapter });
+}
+
 export const prisma: PrismaClient =
-  globalThis.__prisma ??
-  new PrismaClient({
-    log:
-      process.env.NODE_ENV === 'development'
-        ? ['query', 'info', 'warn', 'error']
-        : ['warn', 'error'],
-  });
+  globalThis.__prisma ?? createPrismaClient();
 
 if (process.env.NODE_ENV !== 'production') {
   globalThis.__prisma = prisma;

@@ -15,7 +15,7 @@ import {
   RuleAction,
 } from '../types/rule.types';
 import { AIProvider } from '../types/ai.types';
-import logger from '../config/logger';
+import { logger } from '../config/logger';
 
 /**
  * Rule evaluator that processes rules in priority order
@@ -449,7 +449,7 @@ export class RuleEvaluator implements IRuleEvaluator {
     }
 
     try {
-      const { prompt, confidenceThreshold = 0.7, useClassification } = rule.config;
+      const { prompt, useClassification } = rule.config;
 
       // Build context for AI
       let aiContext = `File: ${context.name}\nMIME Type: ${context.metadata.mimeType}\n`;
@@ -464,7 +464,8 @@ export class RuleEvaluator implements IRuleEvaluator {
         aiContext += `\nContent Preview: ${context.extractedContent.slice(0, 500)}...\n`;
       }
 
-      const fullPrompt = `${prompt}\n\nContext:\n${aiContext}\n\nRespond with a JSON object: {"matched": boolean, "confidence": number, "reason": string}`;
+      // Build the full prompt but don't use it yet – AI integration is pending
+      void `${prompt}\n\nContext:\n${aiContext}\n\nRespond with a JSON object: {"matched": boolean, "confidence": number, "reason": string}`;
 
       // Note: This is a simplified implementation
       // In practice, you'd need to adapt this to work with your specific AI provider

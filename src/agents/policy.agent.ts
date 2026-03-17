@@ -2,9 +2,9 @@
 import { PolicyAgent, PolicyCheckResult, PolicyViolation, AgentResult } from '../types/agent.types';
 import { FileContext } from '../types/context.types';
 import { RuleEvaluator } from '../services/RuleEvaluator';
-import { RuleStorage, RuleEvaluationContext, RuleSeverity } from '../types/rule.types';
+import { RuleStorage, RuleEvaluationContext } from '../types/rule.types';
 import { AIProvider } from '../types/ai.types';
-import logger from '../config/logger';
+import { logger } from '../config/logger';
 
 /**
  * Policy Agent configuration

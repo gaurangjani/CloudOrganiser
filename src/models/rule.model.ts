@@ -27,6 +27,7 @@ export interface RuleDocument extends Document {
   metadata?: Record<string, unknown>;
   createdAt: Date;
   updatedAt: Date;
+  toRule(): AnyRule;
 }
 
 // Schema definition

@@ -6,7 +6,6 @@ import rateLimit from 'express-rate-limit';
 import session from 'express-session';
 import passport from './config/passport';
 import { config } from './config';
-import { logger } from './config/logger';
 import {
   requestLogger,
   errorHandler,
@@ -66,16 +65,5 @@ app.use(notFoundHandler);
 
 // Error handler (must be last)
 app.use(errorHandler);
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM signal received: closing HTTP server');
-  process.exit(0);
-});
-
-process.on('SIGINT', () => {
-  logger.info('SIGINT signal received: closing HTTP server');
-  process.exit(0);
-});
 
 export default app;

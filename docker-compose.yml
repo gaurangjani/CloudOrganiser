@@ -1,0 +1,70 @@
+# Local development environment
+# Usage: docker compose up -d
+#
+# This spins up a PostgreSQL database alongside the backend and frontend
+# services so you can develop and test without manual database setup.
+#
+# Prerequisites:
+#   1. Copy .env.example to .env and fill in the required values.
+#   2. Run: docker compose up -d
+#   3. Run: npx prisma migrate deploy   (first run only)
+
+services:
+  # ── PostgreSQL database ────────────────────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: cloudorganiser
+      POSTGRES_USER: clouduser
+      POSTGRES_PASSWORD: cloudpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clouduser -d cloudorganiser"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ── Backend API ────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      # Override DATABASE_URL to point to the compose db service
+      DATABASE_URL: postgresql://clouduser:cloudpassword@db:5432/cloudorganiser?schema=public
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/v1/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # ── Frontend (Vite/React served by Nginx) ─────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
