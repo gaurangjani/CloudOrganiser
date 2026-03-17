@@ -499,8 +499,8 @@ Contributions are warmly welcomed! Please follow these steps:
 1. **Fork** the repository on GitHub.
 2. **Clone** your fork locally:
    ```bash
-   git clone https://github.com/<your-username>/CloudOrganiser-.git
-   cd CloudOrganiser-
+   git clone https://github.com/<your-username>/CloudOrganiser.git
+   cd CloudOrganiser
    npm install
    ```
 3. **Create a feature branch** from `main`:
@@ -535,7 +535,7 @@ Contributions are warmly welcomed! Please follow these steps:
 
 ### Reporting Issues
 
-Please open a [GitHub Issue](https://github.com/gaurangjani/CloudOrganiser-/issues) with:
+Please open a [GitHub Issue](https://github.com/gaurangjani/CloudOrganiser/issues) with:
 - A clear title and description
 - Steps to reproduce (for bugs)
 - Expected vs actual behaviour
