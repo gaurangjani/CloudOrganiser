@@ -2,6 +2,7 @@
 import app from './app';
 import { config } from './config';
 import { logger } from './config/logger';
+import { prisma } from './config/prisma';
 
 const startServer = async (): Promise<void> => {
   try {
@@ -14,7 +15,7 @@ const startServer = async (): Promise<void> => {
     }
 
     // Start server
-    app.listen(config.port, () => {
+    const server = app.listen(config.port, () => {
       logger.info(`
 ╔═══════════════════════════════════════════════════════════╗
 ║                                                           ║
@@ -41,6 +42,34 @@ const startServer = async (): Promise<void> => {
         logger.warn('✗ Microsoft OAuth not configured');
       }
     });
+
+    // Graceful shutdown – give in-flight requests time to complete before
+    // closing the database connection.  Azure Container Apps sends SIGTERM
+    // when scaling down or redeploying; the default termination grace period
+    // is 30 seconds which is more than enough for most workloads.
+    const shutdown = async (signal: string): Promise<void> => {
+      logger.info(`${signal} received: starting graceful shutdown`);
+
+      server.close(async () => {
+        logger.info('HTTP server closed');
+        try {
+          await prisma.$disconnect();
+          logger.info('Database connection closed');
+        } catch (err) {
+          logger.error('Error closing database connection:', err);
+        }
+        process.exit(0);
+      });
+
+      // Force exit if graceful shutdown takes too long
+      setTimeout(() => {
+        logger.error('Graceful shutdown timed out; forcing exit');
+        process.exit(1);
+      }, 25_000).unref();
+    };
+
+    process.on('SIGTERM', () => void shutdown('SIGTERM'));
+    process.on('SIGINT', () => void shutdown('SIGINT'));
   } catch (error) {
     logger.error('Failed to start server:', error);
     process.exit(1);

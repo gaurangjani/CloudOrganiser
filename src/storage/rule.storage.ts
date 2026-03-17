@@ -1,7 +1,7 @@
 // MongoDB storage implementation for rules
 import { RuleModel } from '../models/rule.model';
 import { AnyRule, RuleStorage, RuleFilter } from '../types/rule.types';
-import logger from '../config/logger';
+import { logger } from '../config/logger';
 
 /**
  * MongoDB-based rule storage implementation
@@ -200,13 +200,13 @@ export class InMemoryRuleStorage implements RuleStorage {
       throw new Error('Rule not found');
     }
 
-    const updated: AnyRule = {
+    const updated = {
       ...existing,
       ...updates,
       id, // Preserve ID
       createdAt: existing.createdAt, // Preserve creation date
       updatedAt: new Date(),
-    };
+    } as AnyRule;
 
     this.rules.set(id, updated);
     return updated;
