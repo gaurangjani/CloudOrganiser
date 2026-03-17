@@ -79,6 +79,42 @@ export interface AIProvider {
 }
 
 /**
+ * FileClassificationInput represents the input for buffer-based file classification
+ */
+export interface FileClassificationInput {
+  /** Raw file contents as a Buffer */
+  buffer: Buffer;
+  /** Original filename, used for extension detection and name suggestions */
+  fileName?: string;
+  /** MIME type override; detected from buffer magic bytes when omitted */
+  mimeType?: string;
+}
+
+/**
+ * FileClassificationResult represents the structured result of buffer-based classification
+ */
+export interface FileClassificationResult {
+  /** High-level category of the file (e.g. "documents", "financial", "media") */
+  fileCategory: string;
+  /** Classification confidence score between 0 and 1 */
+  confidenceScore: number;
+  /** Suggested filename based on classification (preserves original extension) */
+  suggestedFilename: string;
+  /** Suggested folder path for organising the file */
+  suggestedFolderPath: string;
+  /** Descriptive tags from the classifier */
+  tags: string[];
+  /** Broad content type (document, image, video, audio, code, data, other) */
+  contentType: string;
+  /** Whether the file likely contains personally identifiable information */
+  isPII: boolean;
+  /** Detected ISO 639-1 language code, if applicable */
+  language?: string;
+  /** Human-readable reasoning from the classifier */
+  reasoning?: string;
+}
+
+/**
  * AIProviderError represents errors from AI providers
  */
 export class AIProviderError extends Error {

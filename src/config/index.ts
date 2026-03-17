@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import Joi from 'joi';
 import { AI_PROVIDER_TYPES, AIProviderType } from '../types/ai.types';
+import { OCR_PROVIDER_TYPES, OCRProviderType } from '../types/ocr.types';
 
 // Load environment variables
 dotenv.config({ path: path.join(__dirname, '../../.env') });
@@ -49,6 +50,13 @@ const envVarsSchema = Joi.object({
   AI_TEMPERATURE: Joi.number().min(0).max(2).optional(),
   AI_TIMEOUT: Joi.number().optional(),
   AI_RETRY_ATTEMPTS: Joi.number().optional(),
+
+  // OCR Provider
+  OCR_PROVIDER: Joi.string().valid(...OCR_PROVIDER_TYPES).default('tesseract'),
+  OCR_API_KEY: Joi.string().allow('').optional(),
+  OCR_ENDPOINT: Joi.string().allow('').optional(),
+  OCR_LANGUAGE: Joi.string().allow('').optional(),
+  OCR_TIMEOUT: Joi.number().optional(),
 })
   .unknown()
   .required();
@@ -104,5 +112,13 @@ export const config = {
     temperature: envVars.AI_TEMPERATURE as number | undefined,
     timeout: envVars.AI_TIMEOUT as number | undefined,
     retryAttempts: envVars.AI_RETRY_ATTEMPTS as number | undefined,
+  },
+
+  ocr: {
+    provider: envVars.OCR_PROVIDER as OCRProviderType,
+    apiKey: envVars.OCR_API_KEY as string | undefined,
+    endpoint: envVars.OCR_ENDPOINT as string | undefined,
+    language: envVars.OCR_LANGUAGE as string | undefined,
+    timeout: envVars.OCR_TIMEOUT as number | undefined,
   },
 };
