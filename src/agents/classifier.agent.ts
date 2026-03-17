@@ -13,6 +13,8 @@ import {
 } from '../types/ai.types';
 import { FileContentExtractor } from '../utils/fileContentExtractor';
 import { AIProviderFactory } from '../providers/ai.factory';
+import { ApprovalService } from '../services/ApprovalService';
+import { RuleAction } from '../types/rules.types';
 
 /**
  * ClassifierAgentConfig represents configuration for the ClassifierAgent
@@ -22,6 +24,17 @@ export interface ClassifierAgentConfig {
   aiProviderConfig?: AIProviderConfig;
   extractContent?: boolean;
   maxContentLength?: number;
+  /**
+   * When provided, AI classifications with confidence below
+   * `confidenceThreshold` will have their suggested actions queued for
+   * human approval via the ApprovalService.
+   */
+  approvalService?: ApprovalService;
+  /**
+   * Minimum confidence score required to apply a classification immediately.
+   * Defaults to `ApprovalService.DEFAULT_CONFIDENCE_THRESHOLD` (0.7).
+   */
+  confidenceThreshold?: number;
 }
 
 /**
@@ -33,11 +46,16 @@ export class ClassifierAgent implements IClassifierAgent {
   private aiProvider?: AIProvider;
   private extractContent: boolean;
   private maxContentLength: number;
+  private approvalService?: ApprovalService;
+  private confidenceThreshold: number;
 
   constructor(config?: ClassifierAgentConfig) {
     this.aiProvider = config?.aiProvider;
     this.extractContent = config?.extractContent !== false; // Default to true
     this.maxContentLength = config?.maxContentLength || 5000;
+    this.approvalService = config?.approvalService;
+    this.confidenceThreshold =
+      config?.confidenceThreshold ?? ApprovalService.DEFAULT_CONFIDENCE_THRESHOLD;
   }
 
   /**
@@ -123,6 +141,41 @@ export class ClassifierAgent implements IClassifierAgent {
         language: aiResponse.language,
       };
 
+      // Queue suggested folder action for approval if confidence is below threshold
+      let pendingActionId: string | undefined;
+      if (
+        this.approvalService &&
+        aiResponse.suggestedFolder &&
+        ApprovalService.requiresApproval(aiResponse.confidence, this.confidenceThreshold)
+      ) {
+        const action: RuleAction = {
+          type: 'move',
+          params: { destination: aiResponse.suggestedFolder },
+        };
+        const pending = await this.approvalService.queueAction({
+          fileContext: {
+            id: context.id,
+            name: context.name,
+            userId: context.userId,
+            organizationId: context.organizationId,
+            location: context.location,
+          },
+          source: 'ai_classification',
+          sourceName: this.aiProvider.getName(),
+          action,
+          confidence: aiResponse.confidence,
+          confidenceThreshold: this.confidenceThreshold,
+          userId: context.userId,
+          organizationId: context.organizationId,
+          metadata: {
+            categories: aiResponse.categories,
+            tags: aiResponse.tags,
+            reasoning: aiResponse.reasoning,
+          },
+        });
+        pendingActionId = pending.id;
+      }
+
       return {
         success: true,
         data: classification,
@@ -130,6 +183,7 @@ export class ClassifierAgent implements IClassifierAgent {
           provider: this.aiProvider.getName(),
           timestamp: new Date().toISOString(),
           reasoning: aiResponse.reasoning,
+          ...(pendingActionId !== undefined && { pendingActionId }),
         },
       };
     } catch (error) {
