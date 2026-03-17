@@ -7,3 +7,5 @@ coverage
 **/*.test.ts
 **/*.spec.ts
 **/*.test.tsx
+prisma.config.ts
+src/generated/

@@ -14,6 +14,7 @@ import { ContentRuleHandler } from './handlers/ContentRuleHandler';
 import { NamingRuleHandler } from './handlers/NamingRuleHandler';
 import { FolderRoutingRuleHandler } from './handlers/FolderRoutingRuleHandler';
 import { AIAssistedRuleHandler } from './handlers/AIAssistedRuleHandler';
+import { ApprovalService } from '../ApprovalService';
 
 /**
  * RuleEvaluatorConfig allows optional configuration of the evaluator
@@ -21,6 +22,18 @@ import { AIAssistedRuleHandler } from './handlers/AIAssistedRuleHandler';
 export interface RuleEvaluatorConfig {
   /** AI provider used for 'ai_assisted' rules; if omitted those rules are skipped */
   aiProvider?: AIProvider;
+  /**
+   * ApprovalService instance.  When provided, matched actions whose confidence
+   * is below `confidenceThreshold` are queued for human approval instead of
+   * being applied immediately.
+   */
+  approvalService?: ApprovalService;
+  /**
+   * Minimum confidence score required to apply an action immediately.
+   * Actions below this threshold are queued for approval.
+   * Defaults to `ApprovalService.DEFAULT_CONFIDENCE_THRESHOLD` (0.7).
+   */
+  confidenceThreshold?: number;
 }
 
 /**
@@ -43,6 +56,8 @@ export class RuleEvaluator {
   private namingHandler: NamingRuleHandler;
   private folderRoutingHandler: FolderRoutingRuleHandler;
   private aiAssistedHandler: AIAssistedRuleHandler;
+  private approvalService?: ApprovalService;
+  private confidenceThreshold: number;
 
   constructor(repository: RulesRepository, config?: RuleEvaluatorConfig) {
     this.repository = repository;
@@ -51,6 +66,9 @@ export class RuleEvaluator {
     this.namingHandler = new NamingRuleHandler();
     this.folderRoutingHandler = new FolderRoutingRuleHandler();
     this.aiAssistedHandler = new AIAssistedRuleHandler(config?.aiProvider);
+    this.approvalService = config?.approvalService;
+    this.confidenceThreshold =
+      config?.confidenceThreshold ?? ApprovalService.DEFAULT_CONFIDENCE_THRESHOLD;
   }
 
   /**
@@ -60,9 +78,14 @@ export class RuleEvaluator {
    * (lower number = evaluated first), and each one is dispatched to the
    * appropriate handler.
    *
+   * When an `approvalService` is configured, matched actions whose confidence
+   * is below `confidenceThreshold` are queued for human review instead of
+   * being placed in `appliedActions`.
+   *
    * @param context - The FileContext to evaluate
    * @param filter  - Optional additional filter applied when fetching rules
-   * @returns       - A RulesEngineResult containing all matched rules and actions
+   * @returns       - A RulesEngineResult containing matched rules, applied
+   *                  actions, and IDs of any actions queued for approval
    */
   async evaluate(context: FileContext, filter?: RuleFilter): Promise<RulesEngineResult> {
     logger.debug(`RuleEvaluator: evaluating rules for file "${context.name}" (${context.id})`);
@@ -87,18 +110,58 @@ export class RuleEvaluator {
     }
 
     const matchedRules = evaluationResults.filter((r) => r.matched);
-    const appliedActions = matchedRules.flatMap((r) => r.actions);
+
+    // Separate immediately-applicable actions from those requiring approval
+    const appliedActions = [];
+    const pendingActionIds: string[] = [];
+
+    for (const ruleResult of matchedRules) {
+      const confidence = ruleResult.confidence;
+      const needsApproval =
+        this.approvalService !== undefined &&
+        confidence !== undefined &&
+        ApprovalService.requiresApproval(confidence, this.confidenceThreshold);
+
+      if (needsApproval && this.approvalService) {
+        for (const action of ruleResult.actions) {
+          const pending = await this.approvalService.queueAction({
+            fileContext: {
+              id: context.id,
+              name: context.name,
+              userId: context.userId,
+              organizationId: context.organizationId,
+              location: context.location,
+            },
+            source: 'rule',
+            sourceId: ruleResult.ruleId,
+            sourceName: ruleResult.ruleName,
+            action,
+            confidence: confidence as number,
+            confidenceThreshold: this.confidenceThreshold,
+            userId: context.userId,
+            organizationId: context.organizationId,
+          });
+          pendingActionIds.push(pending.id);
+        }
+      } else {
+        appliedActions.push(...ruleResult.actions);
+      }
+    }
 
     const engineResult: RulesEngineResult = {
       fileContextId: context.id,
       matchedRules,
       totalRulesEvaluated: sortedRules.length,
       appliedActions,
+      pendingActionIds,
       timestamp: new Date(),
     };
 
     logger.debug(
-      `RuleEvaluator: ${matchedRules.length}/${sortedRules.length} rules matched for file "${context.name}"`,
+      `RuleEvaluator: ${matchedRules.length}/${sortedRules.length} rules matched for file "${context.name}"` +
+        (pendingActionIds.length > 0
+          ? `, ${pendingActionIds.length} action(s) queued for approval`
+          : ''),
     );
 
     return engineResult;
@@ -141,3 +204,4 @@ export class RuleEvaluator {
     }
   }
 }
+
