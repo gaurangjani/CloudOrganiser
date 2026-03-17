@@ -147,7 +147,7 @@ CloudOrganiser is a Node.js + TypeScript backend that intelligently organises fi
 ## Project Structure
 
 ```
-CloudOrganiser-/
+CloudOrganiser/
 ├── docs/
 │   └── ClassifierAgent.md        # ClassifierAgent full documentation
 ├── src/
