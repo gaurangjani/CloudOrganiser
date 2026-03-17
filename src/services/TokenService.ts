@@ -1,7 +1,7 @@
 // Service for managing OAuth tokens: store, retrieve, refresh, and revoke.
 import { google } from 'googleapis';
 import { OAuthTokenModel, encryptToken, decryptToken } from '../models/oauth-token.model';
-import { config } from '../config';
+import { config, MICROSOFT_OAUTH_SCOPES } from '../config';
 import { logger } from '../config/logger';
 import { StoredOAuthToken, TokenRefreshResult } from '../types/user.types';
 
@@ -153,7 +153,7 @@ export class TokenService {
       client_secret: config.oauth.microsoft.clientSecret,
       grant_type: 'refresh_token',
       refresh_token: refreshToken,
-      scope: 'offline_access user.read Files.Read Files.ReadWrite Files.Read.All',
+      scope: MICROSOFT_OAUTH_SCOPES.join(' '),
     });
 
     const response = await fetch(tokenEndpoint, {

@@ -30,6 +30,9 @@ const envVarsSchema = Joi.object({
   // Session
   SESSION_SECRET: Joi.string().required(),
 
+  // Token encryption (AES-256-GCM key for storing OAuth tokens at rest)
+  TOKEN_ENCRYPTION_KEY: Joi.string().min(16).required(),
+
   // OAuth - Google
   GOOGLE_CLIENT_ID: Joi.string().allow('').optional(),
   GOOGLE_CLIENT_SECRET: Joi.string().allow('').optional(),
@@ -82,6 +85,8 @@ export const config = {
     secret: envVars.SESSION_SECRET as string,
   },
 
+  tokenEncryptionKey: envVars.TOKEN_ENCRYPTION_KEY as string,
+
   oauth: {
     google: {
       clientId: envVars.GOOGLE_CLIENT_ID as string,
@@ -106,3 +111,16 @@ export const config = {
     retryAttempts: envVars.AI_RETRY_ATTEMPTS as number | undefined,
   },
 };
+
+/**
+ * OAuth 2.0 scopes requested from Microsoft.
+ * Shared between the Passport strategy and the token-refresh call so they
+ * stay in sync if the required permissions change.
+ */
+export const MICROSOFT_OAUTH_SCOPES = [
+  'offline_access',
+  'user.read',
+  'Files.Read',
+  'Files.ReadWrite',
+  'Files.Read.All',
+] as const;

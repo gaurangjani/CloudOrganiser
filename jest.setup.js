@@ -5,6 +5,9 @@ process.env.NODE_ENV = 'test';
 process.env.PORT = '3000';
 process.env.SESSION_SECRET = 'test-session-secret';
 
+// Token encryption key for OAuth token storage (mock value for testing)
+process.env.TOKEN_ENCRYPTION_KEY = 'test-token-encryption-key-32-chars!!';
+
 // OAuth credentials (mock values for testing)
 process.env.GOOGLE_CLIENT_ID = 'test-google-client-id';
 process.env.GOOGLE_CLIENT_SECRET = 'test-google-client-secret';

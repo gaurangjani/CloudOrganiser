@@ -1,17 +1,14 @@
 // MongoDB model for storing OAuth access and refresh tokens securely.
-// Tokens are AES-256-GCM encrypted at rest using TOKEN_ENCRYPTION_KEY.
+// Tokens are AES-256-GCM encrypted at rest using the TOKEN_ENCRYPTION_KEY from config.
 import mongoose, { Schema, Document } from 'mongoose';
 import crypto from 'crypto';
+import { config } from '../config';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12;
-const AUTH_TAG_LENGTH = 16;
 
 function getEncryptionKey(): Buffer {
-  const key = process.env.TOKEN_ENCRYPTION_KEY || '';
-  if (!key) {
-    throw new Error('TOKEN_ENCRYPTION_KEY environment variable is not set');
-  }
+  const key = config.tokenEncryptionKey;
   // Accept a hex-encoded 32-byte key or derive one via SHA-256
   if (key.length === 64 && /^[0-9a-fA-F]+$/.test(key)) {
     return Buffer.from(key, 'hex');

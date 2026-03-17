@@ -6,14 +6,21 @@ import {
   microsoftAuthCallback,
   logout,
   getCurrentUser,
+  refreshToken,
+  disconnect,
 } from '../controllers/auth.controller';
 
 const router = Router();
 
 // Google OAuth routes
+// accessType: 'offline' + prompt: 'consent' ensure we receive a refresh token
 router.get(
   '/google',
-  passport.authenticate('google', { scope: ['profile', 'email'] })
+  passport.authenticate('google', {
+    scope: ['profile', 'email'],
+    accessType: 'offline',
+    prompt: 'consent',
+  } as Parameters<typeof passport.authenticate>[1])
 );
 
 router.get(
@@ -37,5 +44,9 @@ router.get(
 // Common auth routes
 router.post('/logout', logout);
 router.get('/me', getCurrentUser);
+
+// Token management routes
+router.post('/refresh', refreshToken);
+router.post('/disconnect', disconnect);
 
 export default router;
