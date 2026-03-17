@@ -41,5 +41,6 @@ coverage/
 .cache/
 tmp/
 temp/
+nohup.out
 
 /src/generated/prisma
