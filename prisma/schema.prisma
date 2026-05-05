@@ -59,6 +59,46 @@ enum FileEventType {
   FILE_RENAMED
 }
 
+// ---------------------------------------------------------------------------
+// Financial accounting enums (IAS 1)
+// ---------------------------------------------------------------------------
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  REVENUE
+  EXPENSE
+}
+
+enum AccountSubType {
+  // Asset sub-types
+  CURRENT_ASSET
+  NON_CURRENT_ASSET
+  // Liability sub-types
+  CURRENT_LIABILITY
+  NON_CURRENT_LIABILITY
+  // Equity sub-types
+  SHARE_CAPITAL
+  RETAINED_EARNINGS
+  OTHER_RESERVES
+  // Revenue sub-types
+  REVENUE
+  OTHER_INCOME
+  // Expense sub-types
+  COST_OF_SALES
+  DISTRIBUTION_COSTS
+  ADMINISTRATIVE_EXPENSES
+  FINANCE_COSTS
+  INCOME_TAX_EXPENSE
+  OTHER_EXPENSE
+}
+
+enum JournalLineDirection {
+  DEBIT
+  CREDIT
+}
+
 enum OrganizationRole {
   OWNER
   ADMIN
@@ -313,4 +353,90 @@ model FileEvent {
   @@index([fileRecordId])
   @@index([eventTimestamp])
   @@index([deletedAt])
+}
+
+// ---------------------------------------------------------------------------
+// LedgerAccount  (Chart of Accounts)
+// ---------------------------------------------------------------------------
+
+model LedgerAccount {
+  id          String         @id @default(cuid())
+  code        String
+  name        String
+  type        AccountType
+  subType     AccountSubType
+  description String?
+  isActive    Boolean        @default(true)
+
+  organizationId String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+
+  deletedAt DateTime?
+  deletedBy String?
+
+  journalLines JournalLine[]
+
+  @@unique([code, organizationId])
+  @@index([type, subType])
+  @@index([organizationId])
+  @@index([isActive])
+  @@index([deletedAt])
+}
+
+// ---------------------------------------------------------------------------
+// JournalEntry  (journal entry header)
+// ---------------------------------------------------------------------------
+
+model JournalEntry {
+  id          String   @id @default(cuid())
+  date        DateTime
+  description String
+  reference   String?
+  isPosted    Boolean  @default(true)
+
+  organizationId String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+
+  deletedAt DateTime?
+  deletedBy String?
+
+  lines JournalLine[]
+
+  @@index([date])
+  @@index([organizationId])
+  @@index([isPosted])
+  @@index([date, organizationId])
+  @@index([deletedAt])
+}
+
+// ---------------------------------------------------------------------------
+// JournalLine  (individual debit / credit line)
+// ---------------------------------------------------------------------------
+
+model JournalLine {
+  id          String               @id @default(cuid())
+  direction   JournalLineDirection
+  amount      Decimal              @db.Decimal(18, 4)
+  description String?
+
+  journalEntryId String
+  accountId      String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  journalEntry JournalEntry  @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  account      LedgerAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
+
+  @@index([journalEntryId])
+  @@index([accountId])
+  @@index([direction])
 }

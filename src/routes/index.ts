@@ -5,6 +5,7 @@ import authRoutes from './auth.routes';
 import webhookRoutes from './webhook.routes';
 import ocrRoutes from './ocr.routes';
 import approvalRoutes from './approval.routes';
+import financialRoutes from './financial.routes';
 import { config } from '../config';
 
 const router = Router();
@@ -18,6 +19,7 @@ router.use(`${apiPrefix}/auth`, authRoutes);
 router.use(`${apiPrefix}/webhooks`, webhookRoutes);
 router.use(`${apiPrefix}/ocr`, ocrRoutes);
 router.use(`${apiPrefix}/approvals`, approvalRoutes);
+router.use(`${apiPrefix}/financial`, financialRoutes);
 
 // Example of how to add more routes:
 // router.use(`${apiPrefix}/users`, userRoutes);
